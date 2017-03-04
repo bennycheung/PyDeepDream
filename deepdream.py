@@ -206,7 +206,8 @@ def get_source_image(args):
 
     if args.input:
         layer_name = get_layer_descriptor(args).replace('/', '_')
-        source_path = args.input.replace('.jpg', '_' + layer_name + '.jpg')
+        extension = os.path.splitext(args.input)[1]
+        source_path = args.input.replace(extension, '_' + layer_name + extension)
         shutil.copyfile(args.input, source_path)
 
     print(''.join(['\nBase image for the DeepDream: ', source_path, '\n']))
