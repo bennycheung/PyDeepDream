@@ -9,14 +9,16 @@ The result are beautiful hallucinations like the one below. The neural network a
 
 *Figure. Vangogh's "Starry Night" Deep Dream transformation*
 
-See the full installation instructions on Blog post at:
+See the full installation instructions (for Windows 10) on Blog post at:
+
+<http://bennycheung.github.io/deep-dream-on-windows-10>
 
 ## Deep Dream Python Script
 Deep Dream Wiki: <https://en.wikipedia.org/wiki/DeepDream>
 
 ### Install Deep Dream Script
-You can find the original GitHub repository at
-https://github.com/google/deepdream/blob/master/dream.ipynb
+You can find the original code at GitHub repository:
+<https://github.com/google/deepdream/blob/master/dream.ipynb>
 
 ```bash
 git clone https://github.com/PyDeepDream
@@ -41,8 +43,10 @@ mkdir bvlc_googlenet
 cd bvlc_googlenet
 ```
 
-download from http://dl.caffe.berkeleyvision.org/bvlc_googlenet.caffemodel
-and save the model here at `bvlc_googlenet/bvlc_googlenet.caffemodel`. The deepdream.py assumes it can find the model there.
+download from <http://dl.caffe.berkeleyvision.org/bvlc_googlenet.caffemodel>
+(~54 MB)
+and save the model here at `bvlc_googlenet/bvlc_googlenet.caffemodel`. The
+`deepdream.py` assumes it can find the model there.
 
 #### How to Use
 Use `-i` to specify your input content image. It will deep dream at a random layer.
@@ -87,3 +91,4 @@ Here are the images of the Deep Dreaming,
 ![Deep Dream Layers](images/Dream_layer_results_annotate_650.jpg)
 
 *Figure. Deep Dream results from the inception into different levels of the neural network. Lower levels amplify the NN patterns. Higher levels amplify the NN objects*
+
