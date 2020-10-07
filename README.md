@@ -39,13 +39,13 @@ Install the GoogLeNet Caffe pre-trained model
 
 ```bash
 cd PyDeepDream
-mkdir bvlc_googlenet
-cd bvlc_googlenet
+mkdir models
+cd models
 ```
 
 download from <http://dl.caffe.berkeleyvision.org/bvlc_googlenet.caffemodel>
 (~54 MB)
-and save the model here at `bvlc_googlenet/bvlc_googlenet.caffemodel`. The
+and save the model here at `models/bvlc_googlenet.caffemodel`. The
 `deepdream.py` assumes it can find the model there.
 
 #### How to Use

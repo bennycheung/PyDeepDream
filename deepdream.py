@@ -1,37 +1,45 @@
+'''
+### PyDeepDream ###
+
+Deep Dream is an algorithm that makes an pattern detection algorithm
+over-interpret patterns. The Deep Dream algorithm is a modified neural network.
+Instead of identifying objects in an input image, it changes the image into
+the direction of its training data set, which produces impressive surrealistic,
+dream-like images.
+'''
+
 # encoding:utf-8
-# deepdream.py
-#
-# Deep Dream is an algorithm that makes an pattern detection algorithm
-# over-interpret patterns. The Deep Dream algorithm is a modified neural network.
-# Instead of identifying objects in an input image, it changes the image into
-# the direction of its training data set, which produces impressive surrealistic,
-# dream-like images
-#
-# The code is modified from
-# https://github.com/google/deepdream/blob/master/dream.ipynb
-#
-# How to Use:
-# Use `-i` to specify your input content image. It will deep dream at a random layer.
-#   python deepdream.py -i {your_image}.jpg
-#
-# If you want to start Deep Dream at a layer depth, type and octave manually:
-#   python deepdream.py -d 1 -t 1 -o 6 -i Style_StarryNight.jpg
-#
-
+import warnings
+warnings.filterwarnings("ignore")
 import os, sys
-
 from random import randint
-
 from cStringIO import StringIO
 import numpy as np
 import scipy.ndimage as nd
 import PIL.Image
 import argparse, datetime, shutil
 from google.protobuf import text_format
-
 # disable logging before net creation
 os.environ["GLOG_minloglevel"] = "2"
 import caffe
+
+
+text = """\n### PyDeepDream ###\n
+    Deep Dream is an algorithm that makes an pattern detection algorithm over-interpret patterns. 
+    This algorithm is a modified neural network. Instead of identifying objects in an input image, 
+    it changes the image into the direction of its training data set, which produces impressive 
+    surrealistic, dream-like images. The code was modified from Google's open-source version:
+
+    https://github.com/google/deepdream/blob/master/dream.ipynb
+
+    # How to Use:
+    
+        python deepdream.py -i images\my_image.jpg
+
+    If you want to start Deep Dream at a layer depth, type and octave manually:
+    
+        python deepdream.py -i images\my_image.jpg -d 1 -t 1 -o 6"""
+
 
 def create_net(model_file):
     """ Create the neural network tmp.prototxt.
@@ -45,14 +53,14 @@ def create_net(model_file):
     text_format.Merge(open(net_fn).read(), model)
     model.force_backward = True
 
-    open('tmp.prototxt', 'w').write(str(model))
+    open('models/tmp.prototxt', 'w').write(str(model))
 
 
-def load_net(model_file):
-    """ Load the neural network tmp.prototxt.
+def load_net(model_file, config_file):
+    """ Load the neural network prototxt file.
     """
-
-    net = caffe.Classifier('tmp.prototxt', model_file,
+	
+    net = caffe.Classifier(config_file, model_file,
                            mean = np.float32([104.0, 116.0, 122.0]), # ImageNet mean, training set dependent
                            channel_swap = (2,1,0)) # the reference model has channels in BGR order instead of RGB
     return net
@@ -79,12 +87,15 @@ class DeepDream(object):
         frame = np.float32(PIL.Image.open(source_path))
 
         frame = self.deepdream(frame, end=end, octave_n=octaves)
+        print(''.join(['\nOctave: ', str(octaves), '\n']))
         extension = os.path.splitext(source_path)[1]
-        dream_path = source_path.replace(extension, '_dream' + extension)
+        #dream_path = source_path.replace(extension, '_dream' + extension)
+        dream_path = source_path
         PIL.Image.fromarray(np.uint8(frame)).save(dream_path)
 
-    def deepdream(self, base_img, iter_n=10, octave_n=4, octave_scale=1.4,
-                              end='inception_4c/output'):
+    def deepdream(self, base_img, iter_n=10, octave_n=4, octave_scale=1.4, 
+					model='models/bvlc_googlenet.caffemodel', 
+                    end='inception_4c/output'):
 
         # prepare base images for all octaves
         octaves = [preprocess(self.net, base_img)]
@@ -144,15 +155,25 @@ def start_dream(args):
     source_path = get_source_image(args)
     layer = get_layer_descriptor(args)
     octave = (args.octaves if args.octaves else randint(1, 9))
-
-    model_file = 'bvlc_googlenet/bvlc_googlenet.caffemodel'
-
+	
+    if args.model:
+	    model_file = args.model
+	    config_file = model_file.replace('.caffemodel','.prototxt')
+    else:
+        model_file = 'models/bvlc_googlenet.caffemodel'
+        config_file = 'models/bvlc_googlenet.prototxt'
+		
+    print(''.join(['\nModel path: ', model_file, '\n']))
+		
     if args.network:
         create_net(model_file)
-    net = load_net(model_file)
+    net = load_net(model_file, config_file)
 
     deepdream = DeepDream(net=net)
     deepdream.iterated_dream(source_path=source_path, end=layer, octaves=octave)
+    
+    img = PIL.Image.open(source_path)
+    img.show()
 
 
 def parse_arguments(sysargs):
@@ -172,13 +193,15 @@ def parse_arguments(sysargs):
                                     choices=xrange(1, 6),
                                     help='Layer type as an value between 1 and 6')
     parser.add_argument('-o', '--octaves', nargs='?', metavar='int', type=int,
-                                         choices=xrange(1, 12),
-                                         help='The number of scales the neural network is applied for')
-    parser.add_argument('-n', '--network', action='store_true',
-                                         help='Create a new neural network model file')
+                                    choices=xrange(1, 12),
+                                    help='The number of scales the neural network is applied for (1-12)')
     parser.add_argument('-i', '--input', nargs='?', metavar='path', type=str,
                                     help='Use the path passed behind -i as source for the dream')
-
+    parser.add_argument('-m', '--model', nargs='?', metavar='path', type=str,
+                                    help='Use the path passed behind -m as source for the Caffe model')					
+    parser.add_argument('-n', '--network', action='store_true',
+                                    help='Create a new neural network model file')
+									
     return parser.parse_args(sysargs)
 
 
@@ -209,20 +232,24 @@ def get_source_image(args):
         extension = os.path.splitext(args.input)[1]
         source_path = args.input.replace(extension, '_' + layer_name + extension)
         shutil.copyfile(args.input, source_path)
-
-    print(''.join(['\nBase image for the DeepDream: ', source_path, '\n']))
-
+        print(''.join(['\nBase image for the DeepDream: ', source_path, '\n']))
     return source_path
 
-
 if __name__ == "__main__":
-    try:
-        args = parse_arguments(sys.argv[1:])
-        while True:
-            start_dream(args)
-            break
 
-    except Exception as e:
-        import traceback
-        print(traceback.format_exc())
-        print('Quitting DeepDream')
+    warnings.filterwarnings("ignore")
+    if len(sys.argv) > 2:
+        try:
+            args = parse_arguments(sys.argv[1:])
+            while True:
+                start_dream(args)
+                break
+        except:
+            import traceback
+            print(traceback.format_exc())
+            print('Quitting DeepDream')
+    else:
+        print(text)
+        quit()
+
+    
